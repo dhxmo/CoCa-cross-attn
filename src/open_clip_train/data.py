@@ -98,8 +98,6 @@ class CsvDataset(Dataset):
         # Convert slices to PIL images and apply transforms
         transformed_frames = []
         for slice in selected_slices:
-            print("slice: ", slice.shape)
-
             slice_np = (slice - slice.min()) / (
                 slice.max() - slice.min()
             )  # Normalize to [0, 1]
@@ -110,8 +108,6 @@ class CsvDataset(Dataset):
                 # .convert("L")  # for grayscale
                 .resize((224, 224), Image.Resampling.BILINEAR)
             )
-            print("slice_pil", slice_pil.size)
-
             transformed_frame = self.transforms(slice_pil)  # Apply transforms (C, H, W)
             transformed_frames.append(transformed_frame)
 

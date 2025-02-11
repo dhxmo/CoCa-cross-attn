@@ -40,7 +40,9 @@ python -m open_clip_train.main \
     --epochs 10 \
     --workers 3 \
     --model "coca_ViT-L-14" \
-    --report-to "wandb" \
     --coca-contrastive-loss-weight 0 \
     --coca-caption-loss-weight 1 \
     --log-every-n-steps 100
+
+
+    --report-to "wandb"

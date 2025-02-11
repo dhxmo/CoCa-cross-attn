@@ -196,6 +196,8 @@ class CoCa(nn.Module):
     def _encode_image(self, images, normalize: bool = True):
         image_latent, tokens_embs = self.visual(images)
         image_latent = F.normalize(image_latent, dim=-1) if normalize else image_latent
+        print("image_encode tokens_embs", tokens_embs.shape)
+
         return image_latent, tokens_embs
 
     def _encode_text(self, text, normalize: bool = True):
