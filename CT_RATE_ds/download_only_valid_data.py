@@ -17,7 +17,7 @@ for name in data["VolumeName"]:
     hf_hub_download(
         repo_id=repo_id,
         repo_type="dataset",
-        token="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",
+        token="token_here",
         subfolder=subfolder,
         filename=name,
         local_dir="data_volumes",

@@ -245,8 +245,8 @@ class CoCa(nn.Module):
     ):
         if image_latent is None or image_embs is None:
             # --- volume frames. add attention pooling here
-            image_latent, image_embs = self._encode_image(image)
-            # image_latent, image_embs = self._temporal_attention(image)
+            # image_latent, image_embs = self._encode_image(image)
+            image_latent, image_embs = self._temporal_attention(image)
 
         if text is None:
             return {"image_features": image_latent, "image_embs": image_embs}
