@@ -381,7 +381,7 @@ pd.DataFrame.from_dict(future_df).to_csv(
 
 This should create a csv dataset that one can use to fine-tune coca with open_clip
 
-```bash
+````bash
 python -m open_clip_train.main \
     --dataset-type "csv" \
     --train-data "~/CoCa-cross-attn/CT_RATE_ds/valid_reports.csv" \
@@ -397,16 +397,14 @@ python -m open_clip_train.main \
     --coca-caption-loss-weight 1 \
     --log-every-n-steps 100 \
     --csv_img_key "VolumeName" \
-    --csv_caption_key "Impressions_EN" \
-    --csv_separator ","
-```
+    --csv_caption_key "Impressions_EN"```
 
 This is a general setting, open_clip has very parameters that can be set, `python -m open_clip_train.main --help` should show them. The only relevant change compared to pre-training are the two arguments
 
 ```bash
 --coca-contrastive-loss-weight 0
 --coca-caption-loss-weight 1
-```
+````
 
 which make the model only train the generative side.
 

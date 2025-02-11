@@ -527,6 +527,12 @@ def parse_args(args):
         default=None,
         help="Impressions Key in the csv file",
     )
+    parser.add_argument(
+        "--csv_separator",
+        type=str,
+        default=",",
+        help="Separator for the csv file",
+    )
 
     args = parser.parse_args(args)
 
