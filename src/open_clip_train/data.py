@@ -50,6 +50,7 @@ class CsvDataset(Dataset):
     ):
         logging.debug(f"Loading csv data from {input_filename}.")
         df = pd.read_csv(input_filename, sep=sep)
+        print("df columns", df.columns.tolist())
 
         self.images = df[img_key].tolist()
         self.captions = df[caption_key].tolist()
