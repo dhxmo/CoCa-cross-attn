@@ -2,7 +2,7 @@ import json
 import os
 import pandas as pd
 
-base_path = "/root/"
+base_path = "/root/data_volumes/dataset/"
 
 # Load JSON file
 with open("valid_reports.json", "r", encoding="utf-8") as f:
