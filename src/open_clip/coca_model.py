@@ -87,11 +87,18 @@ def _token_to_tensor(token_id, device: str = "cpu") -> torch.Tensor:
 
 
 class CrossFrameAttention(nn.Module):
-    def __init__(self, embed_dim=768, num_heads=8, num_layers=2):
+    def __init__(
+        self, intermediate_encoder_state=255, embed_dim=768, num_heads=8, num_layers=2
+    ):
         super().__init__()
-        encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads)
+        self.intermediate_encoder_state = intermediate_encoder_state
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=intermediate_encoder_state * embed_dim, nhead=num_heads
+        )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.cls_token = nn.Parameter(torch.empty(1, 1, embed_dim))
+        self.cls_token = nn.Parameter(
+            torch.empty(1, 1, intermediate_encoder_state, embed_dim)
+        )
         nn.init.kaiming_uniform_(self.cls_token)  # Learnable CLS token
 
         self.to_latent = nn.Identity()
@@ -99,23 +106,27 @@ class CrossFrameAttention(nn.Module):
     def forward(self, frame_embeddings):
         """return CLS token as pooled representation nd its latent"""
         print("frame_embeddings", frame_embeddings.shape)
-        batch_size, _, _ = frame_embeddings.shape
+        # (batch_size, num_frames, intermediate_dim, embed_dim)
+        batch_size, num_frames, intermediate, embed = frame_embeddings.shape
 
         cls_tokens = self.cls_token.expand(
-            batch_size, -1, -1
-        )  # (batch_size, 1, embed_dim)
+            batch_size, -1, self.intermediate_encoder_state, -1
+        )  # (batch_size, 1, intermediate_encoder_state, embed_dim)
         print("cls_tokens", cls_tokens.shape)
 
         # Concatenate CLS token and frame embeddings to create input for transformer encoder
         input_seq = torch.cat(
             [cls_tokens, frame_embeddings], dim=1
-        )  # (batch_size, num_frames+1, embed_dim)
+        )  # (batch_size, num_frames+1, intermediate_encoder_state, embed_dim)
         print("input_seq", input_seq.shape)
+
+        # (batch_size, num_frames+1, intermediate_encoder_state*embed_dim)
+        input_seq = input_seq.view(batch_size, num_frames + 1, intermediate * embed)
 
         output = self.transformer(
             input_seq
-        )  # (batch_size, num_frames+1, sl, embed_dim)
-        cls_emb = output[:, 0, :, :]  # Extract CLS token as pooled representation
+        )  # (batch_size, num_frames+1, intermediate_encoder_state*embed_dim)
+        cls_emb = output[:, 0, :]  # Extract CLS token as pooled representation
         print("cls_emb", cls_emb.shape, self.to_latent(cls_emb).shape)
 
         return self.to_latent(cls_emb), cls_emb
@@ -211,15 +222,17 @@ class CoCa(nn.Module):
 
         # stack tokens_embs from _encode_image -- tuple object 1
         # for each frame, encode the image and extract embedding tokens. stack all
+
         frame_embeddings = torch.stack(
             [self._encode_image(image_embs[:, i])[1] for i in range(num_frames)],
             dim=1,
-        )
+        )  # (batch_size, num_frames, intermediate_dim, embed_dim)
+
         print("frame_embeddings", frame_embeddings.shape)
-        frame_embeddings = frame_embeddings.mean(
-            dim=2
-        )  # (batch_size, num_frames, embed_dim)
-        print("post frame_embeddings", frame_embeddings.shape)
+        # frame_embeddings = frame_embeddings.mean(
+        #     dim=2
+        # )  # (batch_size, num_frames, embed_dim)
+        # print("post frame_embeddings", frame_embeddings.shape)
 
         # cross attention between tokens
         temporal_image_latent, temporal_image_emb = self.temporal_attention(
