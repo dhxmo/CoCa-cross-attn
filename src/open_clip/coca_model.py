@@ -118,28 +118,32 @@ class FrameAttentionPooling(nn.Module):
         cls_tokens = self.cls_token.expand(batch_size, -1, seq_len, -1)
         print("cls_token", cls_tokens.shape)
 
+        frame_embeddings = frame_embeddings.view(
+            batch_size, num_frames * seq_len, embed_dim
+        )
+        print("frame_embeddings after view", frame_embeddings.shape)
+
         # Concatenate CLS token to frame embeddings
-        # (batch_size, num_frames+1, seq_len, embed_dim)
+        # (batch_size, 1 + num_frames*seq_len, embed_dim)
         input_seq = torch.cat([cls_tokens, frame_embeddings], dim=1)
         print("input_seq: ", input_seq.shape)
-
-        input_seq = input_seq.view(
-            input_seq.shape[0],
-            input_seq.shape[1] * input_seq.shape[2],
-            input_seq.shape[3],
-        )
-        print("post input_seq: ", input_seq.shape)
 
         # Apply transformer encoder
         output = self.transformer(
             input_seq
-        )  # (batch_size, num_frames+1, seq_len, embed_dim)
+        )  # (batch_size, 1 + num_frames*seq_len, embed_dim)
         print("output: ", output.shape)
 
+        cls_repr = output[:, 0, :]
+        print("cls_repr", cls_repr.shape)
+
+        cls_repr = cls_repr.view(batch_size, num_frames, seq_len, embed_dim)
+        print("cls_repr", cls_repr.shape)
+
         return (
-            self.to_latent(output[:, 0, :, :]),
-            output[:, 0, :, :],
-        )  # Return CLS token embeddings -> (batch_size, seq_len, embed_dim)
+            self.to_latent(cls_repr),
+            cls_repr,
+        )  # Return CLS token embeddings -> (batch_size, num_frames, seq_len, embed_dim)
 
 
 class CoCa(nn.Module):
@@ -215,7 +219,7 @@ class CoCa(nn.Module):
     def _encode_image(self, images, normalize: bool = True):
         image_latent, tokens_embs = self.visual(images)
         image_latent = F.normalize(image_latent, dim=-1) if normalize else image_latent
-        print("image_encode tokens_embs", tokens_embs.shape)
+        print("image_latent, tokens_embs", image_latent.shape, tokens_embs.shape)
 
         return image_latent, tokens_embs
 
@@ -242,6 +246,11 @@ class CoCa(nn.Module):
         # embed tokens and cross attention between tokens
         temporal_image_latent, temporal_image_emb = self.temporal_attention(
             frame_embeddings
+        )
+        print(
+            "temporal_image_latent, temporal_image_emb",
+            temporal_image_latent.shape,
+            temporal_image_emb.shape,
         )
         temporal_image_latent = (
             F.normalize(temporal_image_latent, dim=-1)
