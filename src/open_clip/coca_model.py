@@ -251,17 +251,21 @@ class CoCa(nn.Module):
         print("frame_embeddings", frame_embeddings.shape)
 
         # embed tokens and cross attention between tokens
-        temporal_image_latent = self.temporal_attention(frame_embeddings)
-        print(
-            "temporal_image_latent",
-            temporal_image_latent.shape,
+        temporal_image_latent, temporal_image_embeds = self.temporal_attention(
+            frame_embeddings
         )
+        print(
+            "temporal_image_latent, temporal_image_embeds",
+            temporal_image_latent.shape,
+            temporal_image_embeds.shape,
+        )
+
         temporal_image_latent = (
             F.normalize(temporal_image_latent, dim=-1)
             if normalize
             else temporal_image_latent
         )
-        return temporal_image_latent
+        return temporal_image_latent, temporal_image_embeds
 
     def encode_image(self, images, normalize: bool = True):
         image_latent, _ = self._encode_image(images, normalize=normalize)
@@ -281,7 +285,7 @@ class CoCa(nn.Module):
     ):
         if image_latent is None or image_embs is None:
             # --- volume frames. add attention pooling here
-            image_latent = self._temporal_attention(image)
+            image_latent, image_embs = self._temporal_attention(image)
 
         if text is None:
             return {"image_features": image_latent, "image_embs": image_embs}
