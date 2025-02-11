@@ -64,34 +64,11 @@ class CsvDataset(Dataset):
         return len(self.captions)
 
     def __getitem__(self, idx):
-        images = self.load_middle_nifti_slice(str(self.images[idx]))
+        images = self.load_nifti_volume(str(self.images[idx]))
         texts = self.tokenize([str(self.captions[idx])])[0]
         return images, texts
 
-    def load_middle_nifti_slice(self, nifti_path):
-        # TODO: change this to take 15 slices in each direction
-        # every 5th slice from the middle out ---> total of 30
-        nifti_img = nib.load(nifti_path)
-        volume = nifti_img.get_fdata()  # Shape: (Height, Width, Depth)
-
-        total_slices = volume.shape[2]  # Depth = number of slices
-        middle_idx = total_slices // 2
-        selected_slice = volume[:, :, middle_idx]  # Shape: (H, W)
-
-        slice_np = (selected_slice - selected_slice.min()) / (
-            selected_slice.max() - selected_slice.min()
-        )  # Normalize to [0, 1]
-        slice_np = (slice_np * 255).astype(np.uint8)  # Convert to uint8
-
-        slice_pil = (
-            Image.fromarray(slice_np)
-            .convert("L")
-            .resize((224, 224), Image.Resampling.BILINEAR)
-        )
-
-        return self.transforms(slice_pil)  # Apply transforms (C, H, W)
-
-    def load_nifti_as_video(self, nifti_path):
+    def load_nifti_volume(self, nifti_path):
         # Load the 3D NIfTI file
         nifti_img = nib.load(nifti_path)
         volume = nifti_img.get_fdata()  # Shape: (Height, Width, Depth)
