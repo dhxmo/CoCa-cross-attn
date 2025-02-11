@@ -123,6 +123,13 @@ class FrameAttentionPooling(nn.Module):
         input_seq = torch.cat([cls_tokens, frame_embeddings], dim=1)
         print("input_seq: ", input_seq.shape)
 
+        input_seq = input_seq.view(
+            input_seq.shape[0],
+            input_seq.shape[1] * input_seq.shape[2],
+            input_seq.shape[3],
+        )
+        print("post input_seq: ", input_seq.shape)
+
         # Apply transformer encoder
         output = self.transformer(
             input_seq
@@ -220,7 +227,8 @@ class CoCa(nn.Module):
     def _temporal_attention(self, images, normalize: bool = True):
         ### ---> TODO: some error here in temporal attention. FIX THIS
         print(
-            "inside temporal attention ---> batch_size, num_frames, c, h, w", images.shape
+            "inside temporal attention ---> batch_size, num_frames, c, h, w",
+            images.shape,
         )
         batch_size, num_frames, c, h, w = images.shape
         # stack tokens_embs from _encode_image -- tuple object 1
