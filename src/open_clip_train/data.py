@@ -49,7 +49,7 @@ class CsvDataset(Dataset):
         tokenizer=None,
     ):
         logging.debug(f"Loading csv data from {input_filename}.")
-        df = pd.read_csv(input_filename, sep=sep)
+        df = pd.read_csv(input_filename, sep=None, engine="python")
         print("df columns", df.columns.tolist())
 
         self.images = df[img_key].tolist()
