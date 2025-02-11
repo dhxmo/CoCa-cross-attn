@@ -91,22 +91,18 @@ class CrossFrameAttention(nn.Module):
         super().__init__()
         encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.cls_token = nn.Parameter(torch.empty(1, 1, embed_dim))
+        self.cls_token = nn.Parameter(torch.empty(1, 1, 1, embed_dim))
         nn.init.kaiming_uniform_(self.cls_token)  # Learnable CLS token
 
         self.to_latent = nn.Identity()
 
     def forward(self, frame_embeddings):
         """return CLS token as pooled representation nd its latent"""
-        print(
-            "frame_embeddings",
-            frame_embeddings.shape,
-            "expect batch_size, num_frames, embed_dim",
-        )
-
-        batch_size, num_frames, embed_dim = frame_embeddings.shape
+        print("frame_embeddings", frame_embeddings.shape)
+        batch_size, _, sl, _ = frame_embeddings.shape
+        
         cls_tokens = self.cls_token.expand(
-            batch_size, -1, -1
+            batch_size, -1, sl, -1
         )  # (batch_size, 1, embed_dim)
         print("cls_tokens", cls_tokens.shape)
 
