@@ -35,6 +35,9 @@ df["VolumeName"] = df["VolumeName"].apply(get_full_path)
 
 # Remove rows where VolumePath is None (i.e., those that had "_b")
 df = df.dropna(subset=["VolumeName"])
+df.rename(columns={"VolumeName": "filepath"}, inplace=True)
+df.rename(columns={"Impressions_EN": "title"}, inplace=True)
+df.drop(columns=["ClinicalInformation_EN", "Technique_EN", "Findings_EN"], inplace=True)
 
 # Convert to CSV
 df.to_csv("valid_reports.csv", index=False)

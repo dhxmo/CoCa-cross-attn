@@ -386,10 +386,10 @@ python -m open_clip_train.main \
     --dataset-type "csv" \
     --train-data "~/CoCa-cross-attn/CT_RATE_ds/valid_reports.csv" \
     --warmup 1000 \
-    --batch-size 128 \
+    --batch-size 16 \
     --lr 1e-5 \
     --wd 0.1 \
-    --epochs 1 \
+    --epochs 10 \
     --workers 3 \
     --model "coca_ViT-L-14" \
     --report-to "wandb" \
@@ -397,7 +397,8 @@ python -m open_clip_train.main \
     --coca-caption-loss-weight 1 \
     --log-every-n-steps 100 \
     --csv_img_key "VolumeName" \
-    --csv_caption_key "Impressions_EN"```
+    --csv_caption_key "Impressions_EN"
+    ```
 
 This is a general setting, open_clip has very parameters that can be set, `python -m open_clip_train.main --help` should show them. The only relevant change compared to pre-training are the two arguments
 
