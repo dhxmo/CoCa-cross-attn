@@ -40,7 +40,13 @@ except ImportError:
 
 class CsvDataset(Dataset):
     def __init__(
-        self, input_filename, transforms, img_key, caption_key, sep=",", tokenizer=None
+        self,
+        input_filename,
+        transforms,
+        img_key="filepath",
+        caption_key="title",
+        sep=",",
+        tokenizer=None,
     ):
         logging.debug(f"Loading csv data from {input_filename}.")
         df = pd.read_csv(input_filename, sep=sep)
