@@ -86,6 +86,55 @@ def _token_to_tensor(token_id, device: str = "cpu") -> torch.Tensor:
     return token_id
 
 
+# TODO: alternatives to this (deep global interactions)pooling:
+# self-attention pooling (interpretability & efficiency)
+# max pooling (robust feature extraction)
+# mean pooling (simplicity)
+class FrameAttentionPooling(nn.Module):
+    def __init__(self, embed_dim=768, num_heads=8, num_layers=2):
+        super().__init__()
+        encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+
+        self.cls_token = nn.Parameter(torch.empty(1, 1, 1, embed_dim))  # (1, 1, 1, 768)
+        nn.init.kaiming_uniform_(self.cls_token)
+
+        self.to_latent = nn.Identity()
+
+    def forward(self, frame_embeddings):
+        # (batch_size, num_frames, seq_len, embed_dim)
+        batch_size, num_frames, seq_len, embed_dim = (
+            frame_embeddings.shape
+        )  # (16, 30, 255, 768)
+        print(
+            "batch_size, num_frames, seq_len, embed_dim",
+            batch_size,
+            num_frames,
+            seq_len,
+            embed_dim,
+        )
+
+        # Expand cls token: (batch_size, 1, seq_len, embed_dim)
+        cls_tokens = self.cls_token.expand(batch_size, -1, seq_len, -1)
+        print("cls_token", cls_tokens.shape)
+
+        # Concatenate CLS token to frame embeddings
+        # (batch_size, num_frames+1, seq_len, embed_dim)
+        input_seq = torch.cat([cls_tokens, frame_embeddings], dim=1)
+        print("input_seq: ", input_seq.shape)
+
+        # Apply transformer encoder
+        output = self.transformer(
+            input_seq
+        )  # (batch_size, num_frames+1, seq_len, embed_dim)
+        print("output: ", output.shape)
+
+        return (
+            self.to_latent(output[:, 0, :, :]),
+            output[:, 0, :, :],
+        )  # Return CLS token embeddings -> (batch_size, seq_len, embed_dim)
+
+
 class CoCa(nn.Module):
     def __init__(
         self,
@@ -131,7 +180,7 @@ class CoCa(nn.Module):
             cast_dtype=cast_dtype,
         )
 
-        # self.temporal_attention = CrossFrameAttention(embed_dim)
+        self.temporal_attention = FrameAttentionPooling(embed_dim)
 
         self.text_decoder = _build_text_decoder_tower(
             vocab_size,
@@ -168,6 +217,31 @@ class CoCa(nn.Module):
         text_latent = F.normalize(text_latent, dim=-1) if normalize else text_latent
         return text_latent, token_emb
 
+    def _temporal_attention(self, images, normalize: bool = True):
+        ### ---> TODO: some error here in temporal attention. FIX THIS
+        print(
+            "inside temporal attention ---> batch_size, num_frames, h, w", images.shape
+        )
+        batch_size, num_frames, h, w = images.shape
+        # stack tokens_embs from _encode_image -- tuple object 1
+        # for each frame, encode the image and extract embedding tokens. stack all
+        frame_embeddings = torch.stack(
+            [self._encode_image(images[:, i])[1] for i in range(num_frames)],
+            dim=1,
+        )  # (batch_size, num_frames, seq_len, embed_dim)
+        print("frame_embeddings", frame_embeddings.shape)
+
+        # embed tokens and cross attention between tokens
+        temporal_image_latent, temporal_image_emb = self.temporal_attention(
+            frame_embeddings
+        )
+        temporal_image_latent = (
+            F.normalize(temporal_image_latent, dim=-1)
+            if normalize
+            else temporal_image_latent
+        )
+        return temporal_image_latent, temporal_image_emb
+
     def encode_image(self, images, normalize: bool = True):
         image_latent, _ = self._encode_image(images, normalize=normalize)
         return image_latent
@@ -185,8 +259,8 @@ class CoCa(nn.Module):
         output_labels: bool = True,
     ):
         if image_latent is None or image_embs is None:
-            # --- TODO: volume frames. add attention pooling here
-            image_latent, image_embs = self._encode_image(image)
+            # --- volume frames. add attention pooling here
+            image_latent, image_embs = self._temporal_attention(image)
 
         if text is None:
             return {"image_features": image_latent, "image_embs": image_embs}
