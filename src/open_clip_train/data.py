@@ -99,22 +99,17 @@ class CsvDataset(Dataset):
                 slice.max() - slice.min()
             )  # Normalize to [0, 1]
             slice_np = (slice_np * 255).astype(np.uint8)  # Convert to uint8
-            print("Convert to uint8 success")
-
             # Convert to PIL image & Resize to (224, 224)
-            slice_pil = Image.fromarray(slice_np).resize(
-                (224, 224), Image.Resampling.BILINEAR
+            slice_pil = (
+                Image.fromarray(slice_np)
+                # .convert("L")  # for grayscale
+                .resize((224, 224), Image.Resampling.BILINEAR)
             )
-            print("convert to pil and resize success")
-
             transformed_frame = self.transforms(slice_pil)  # Apply transforms (C, H, W)
             transformed_frames.append(transformed_frame)
 
         # Stack frames into (num_frames, C, H, W)
-        volume_tensor = torch.stack(transformed_frames)
-        print("vol tensor", volume_tensor.shape)
-
-        return volume_tensor
+        return torch.stack(transformed_frames)
 
 
 class SharedEpoch:

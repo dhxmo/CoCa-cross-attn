@@ -59,7 +59,7 @@ def backward(total_loss, scaler):
         scaler.scale(total_loss).backward()
     else:
         total_loss.backward()
- 
+
 
 def train_one_epoch(
     model,
