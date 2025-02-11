@@ -297,8 +297,10 @@ class CoCa(nn.Module):
         if output_labels:
             # align text_embs and thus logits with labels for teacher-forcing caption loss
             token_embs = token_embs[:, :-1]
-
+        print("entering decoder")
         logits = self.text_decoder(image_embs, token_embs)
+        print("logits", logits.shape)
+
         out_dict = {
             "image_features": image_latent,
             "text_features": text_latent,
