@@ -396,7 +396,7 @@ python -m open_clip_train.main \
     --coca-contrastive-loss-weight 0 \
     --coca-caption-loss-weight 1 \
     --log-every-n-steps 100 \
-    --csv_caption_key "VolumeName" \
+    --csv_img_key "VolumeName" \
     --csv_caption_key "Impressions_EN" \
     --csv_separator ","
 ```

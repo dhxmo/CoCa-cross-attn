@@ -515,6 +515,18 @@ def parse_args(args):
         type=str,
         help="A string to specify a specific distributed loss implementation.",
     )
+    parser.add_argument(
+        "--csv_img_key",
+        type=str,
+        default=None,
+        help="Image/Volume Key in the csv file",
+    )
+    parser.add_argument(
+        "--csv_caption_key",
+        type=str,
+        default=None,
+        help="Impressions Key in the csv file",
+    )
 
     args = parser.parse_args(args)
 
