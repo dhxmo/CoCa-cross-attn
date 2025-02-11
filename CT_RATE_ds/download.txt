@@ -1,0 +1,7 @@
+https://huggingface.co/datasets/ibrahimhamamci/CT-RATE/viewer/reports
+
+HF_TOKEN=...
+
+curl -X GET \
+     -H "Authorization: Bearer $HF_TOKEN" \
+     "https://datasets-server.huggingface.co/rows?dataset=ibrahimhamamci%2FCT-RATE&config=reports&split=train&offset=0&length=100"
