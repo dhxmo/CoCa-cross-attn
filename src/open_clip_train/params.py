@@ -518,13 +518,13 @@ def parse_args(args):
     parser.add_argument(
         "--csv_img_key",
         type=str,
-        default=None,
+        default="filepath",
         help="Image/Volume Key in the csv file",
     )
     parser.add_argument(
         "--csv_caption_key",
         type=str,
-        default=None,
+        default="title",
         help="Impressions Key in the csv file",
     )
     parser.add_argument(

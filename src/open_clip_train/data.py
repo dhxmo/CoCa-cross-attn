@@ -75,9 +75,9 @@ class CsvDataset(Dataset):
         print("loading nifti")
         # Load the 3D NIfTI file
         nifti_img = nib.load(nifti_path)
-        volume = nifti_img.get_fdata()  # Shape: (Depth, Height, Width)
+        volume = nifti_img.get_fdata()  # Shape: (Height, Width, Depth)
 
-        total_slices = volume.shape[0]  # Depth = number of slices
+        total_slices = volume.shape[2]  # Depth = number of slices
         print("Total slices", total_slices)
 
         if total_slices < self.num_frames:
