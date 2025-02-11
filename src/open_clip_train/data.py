@@ -65,8 +65,8 @@ class CsvDataset(Dataset):
 
     def __getitem__(self, idx):
         # TODO: send video instead of image::
-        images = self.transforms(Image.open(str(self.images[idx])))
-        # images = load_nifti_as_video(nifti_path, self.num_frames)  # (num_frames, C, H, W)
+        # images = self.transforms(Image.open(str(self.images[idx])))
+        images = self.load_nifti_as_video(self.images[idx])  # (num_frames, C, H, W)
 
         texts = self.tokenize([str(self.captions[idx])])[0]
         return images, texts
