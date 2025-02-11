@@ -113,35 +113,44 @@ class FrameAttentionPooling(nn.Module):
         )
 
         # Expand cls token: (batch_size, 1, embed_dim)
-        cls_tokens = self.cls_token.expand(batch_size, -1, -1)
+        cls_tokens = self.cls_token.expand(batch_size * num_frames, -1, -1)
         print("cls_token", cls_tokens.shape)
 
         frame_embeddings = frame_embeddings.view(
-            batch_size, num_frames * seq_len, embed_dim
+            batch_size * num_frames, seq_len, embed_dim
         )
         print("frame_embeddings after view", frame_embeddings.shape)
 
         # Concatenate CLS token to frame embeddings
-        # (batch_size, 1 + num_frames*seq_len, embed_dim)
-        input_seq = torch.cat([cls_tokens, frame_embeddings], dim=1)
-        print("input_seq: ", input_seq.shape)
+        # (batch_size*num_frames, 1 + seq_len, embed_dim)
+        # input_seq = torch.cat([cls_tokens, frame_embeddings], dim=1)
+        # print("input_seq: ", input_seq.shape)
 
         # Apply transformer encoder
         output = self.transformer(
-            input_seq
-        )  # (batch_size, 1 + num_frames*seq_len, embed_dim)
+            frame_embeddings
+        )  # (batch_size*num_frames, seq_len, embed_dim)
         print("output: ", output.shape)
 
-        cls_repr = output[:, 0, :]
-        print("cls_repr", cls_repr.shape)
+        pooled_output = output.mean(dim=1)  # (batch_size*num_frames, 1, embed_dim)
+        pooled_output = pooled_output.view(
+            batch_size, num_frames, embed_dim
+        )  # (batch_size, num_frames, embed_dim)
 
-        cls_repr = cls_repr.view(batch_size, num_frames, seq_len, embed_dim)
-        print("cls_repr", cls_repr.shape)
-
+        # cls_repr = output[:, 0, :]  # (batch_size*num_frames, embed_dim)
+        # cls_repr = cls_repr.view(
+        #     batch_size, num_frames, embed_dim
+        # )  # (batch_size, num_frames, embed_dim)
+        # print("cls_repr", cls_repr.shape)
+        print(
+            "self.to_latent(pooled_output), pooled_output",
+            self.to_latent(pooled_output).shape,
+            pooled_output.shape,
+        )
         return (
-            self.to_latent(cls_repr),
-            cls_repr,
-        )  # Return CLS token embeddings -> (batch_size, num_frames, seq_len, embed_dim)
+            self.to_latent(pooled_output),
+            pooled_output,
+        )  # (batch_size, embed_dim) , (batch_size, num_frames, embed_dim)
 
 
 class CoCa(nn.Module):
@@ -242,20 +251,17 @@ class CoCa(nn.Module):
         print("frame_embeddings", frame_embeddings.shape)
 
         # embed tokens and cross attention between tokens
-        temporal_image_latent, temporal_image_emb = self.temporal_attention(
-            frame_embeddings
-        )
+        temporal_image_latent = self.temporal_attention(frame_embeddings)
         print(
-            "temporal_image_latent, temporal_image_emb",
+            "temporal_image_latent",
             temporal_image_latent.shape,
-            temporal_image_emb.shape,
         )
         temporal_image_latent = (
             F.normalize(temporal_image_latent, dim=-1)
             if normalize
             else temporal_image_latent
         )
-        return temporal_image_latent, temporal_image_emb
+        return temporal_image_latent
 
     def encode_image(self, images, normalize: bool = True):
         image_latent, _ = self._encode_image(images, normalize=normalize)
@@ -275,7 +281,7 @@ class CoCa(nn.Module):
     ):
         if image_latent is None or image_embs is None:
             # --- volume frames. add attention pooling here
-            image_latent, image_embs = self._temporal_attention(image)
+            image_latent = self._temporal_attention(image)
 
         if text is None:
             return {"image_features": image_latent, "image_embs": image_embs}
