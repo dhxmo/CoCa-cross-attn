@@ -113,10 +113,10 @@ class CsvDataset(Dataset):
                 .convert("L")  # for grayscale
                 .resize((224, 224), Image.Resampling.BILINEAR)
             )
-            transformed_frame = self.transforms(slice_pil)  # Apply transforms (H, W)
+            transformed_frame = self.transforms(slice_pil)  # Apply transforms (C, H, W)
             transformed_frames.append(transformed_frame)
 
-        # Stack frames into (num_frames, H, W)
+        # Stack frames into (num_frames, c, H, W)
         return torch.stack(transformed_frames)
 
 

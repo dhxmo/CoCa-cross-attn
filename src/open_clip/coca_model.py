@@ -220,9 +220,9 @@ class CoCa(nn.Module):
     def _temporal_attention(self, images, normalize: bool = True):
         ### ---> TODO: some error here in temporal attention. FIX THIS
         print(
-            "inside temporal attention ---> batch_size, num_frames, h, w", images.shape
+            "inside temporal attention ---> batch_size, num_frames, c, h, w", images.shape
         )
-        batch_size, num_frames, h, w = images.shape
+        batch_size, num_frames, c, h, w = images.shape
         # stack tokens_embs from _encode_image -- tuple object 1
         # for each frame, encode the image and extract embedding tokens. stack all
         frame_embeddings = torch.stack(
