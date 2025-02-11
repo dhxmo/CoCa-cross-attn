@@ -206,6 +206,7 @@ class CoCa(nn.Module):
         return text_latent, token_emb
 
     def _temporal_attention(self, image_embs, normalize: bool = True):
+        ### ---> TODO: some error here in temporal attention. FIX THIS
         print("inside temporal attention", image_embs.shape)
 
         batch_size, num_frames, c, h, w = image_embs.shape
