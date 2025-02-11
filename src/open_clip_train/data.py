@@ -67,54 +67,34 @@ class CsvDataset(Dataset):
         # TODO: send video instead of image::
         # images = self.transforms(Image.open(str(self.images[idx])))
 
-        images = self.load_nifti_as_video(str(self.images[idx]))
+        images = self.load_middle_nifti_slice(str(self.images[idx]))
         print("images", images.shape)
 
         texts = self.tokenize([str(self.captions[idx])])[0]
         return images, texts
 
-    def load_nifti_as_video(self, nifti_path):
-        print("loading nifti")
-        # Load the 3D NIfTI file
+    def load_middle_nifti_slice(self, nifti_path):
+        print("Loading NIfTI")
         nifti_img = nib.load(nifti_path)
         volume = nifti_img.get_fdata()  # Shape: (Height, Width, Depth)
 
         total_slices = volume.shape[2]  # Depth = number of slices
         print("Total slices", total_slices)
 
-        if total_slices < self.num_frames:
-            raise ValueError(
-                f"NIfTI file {nifti_path} has only {total_slices} slices, but {self.num_frames} are required."
-            )
-
-        # Find middle slice
         middle_idx = total_slices // 2
-        # start_idx = max(0, middle_idx - 5)
-        # end_idx = min(total_slices, middle_idx + 5)
+        selected_slice = volume[:, :, middle_idx]  # Shape: (H, W)
 
-        selected_slices = volume[:, :, middle_idx]  # Shape: (H, W, num_frames)
-        selected_slices = selected_slices.transpose(
-            2, 0, 1
-        )  # Shape: (num_frames, H, W)
+        slice_np = (selected_slice - selected_slice.min()) / (
+            selected_slice.max() - selected_slice.min()
+        )  # Normalize to [0, 1]
+        slice_np = (slice_np * 255).astype(np.uint8)  # Convert to uint8
 
-        # Convert slices to PIL images and apply transforms
-        transformed_frames = []
-        for slice in selected_slices:
-            slice_np = (slice - slice.min()) / (
-                slice.max() - slice.min()
-            )  # Normalize to [0, 1]
-            slice_np = (slice_np * 255).astype(np.uint8)  # Convert to uint8
-            # Convert to PIL image & Resize to (224, 224)
-            slice_pil = (
-                Image.fromarray(slice_np)
-                # .convert("L")  # for grayscale
-                .resize((224, 224), Image.Resampling.BILINEAR)
-            )
-            transformed_frame = self.transforms(slice_pil)  # Apply transforms (C, H, W)
-            transformed_frames.append(transformed_frame)
+        slice_pil = Image.fromarray(slice_np).resize(
+            (224, 224), Image.Resampling.BILINEAR
+        )
+        transformed_frame = self.transforms(slice_pil)  # Apply transforms (C, H, W)
 
-        # Stack frames into (num_frames, C, H, W)
-        return torch.stack(transformed_frames).squeeze(0)
+        return transformed_frame
 
 
 class SharedEpoch:
