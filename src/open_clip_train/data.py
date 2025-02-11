@@ -90,11 +90,15 @@ class CsvDataset(Dataset):
         start_idx = max(0, middle_idx - 5)
         end_idx = min(total_slices, middle_idx + 5)
 
-        selected_slices = volume[start_idx:end_idx]  # Shape: (num_frames, H, W)
+        selected_slices = volume[:, :, start_idx:end_idx]  # Shape: (H, W, num_frames)
+        selected_slices = selected_slices.transpose(
+            2, 0, 1
+        )  # Shape: (num_frames, H, W)
 
         # Convert slices to PIL images and apply transforms
         transformed_frames = []
         for slice in selected_slices:
+            print("slice: ", slice, slice.shape)
             slice_np = (slice - slice.min()) / (
                 slice.max() - slice.min()
             )  # Normalize to [0, 1]
