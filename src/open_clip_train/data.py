@@ -64,23 +64,15 @@ class CsvDataset(Dataset):
         return len(self.captions)
 
     def __getitem__(self, idx):
-        # TODO: send video instead of image::
-        # images = self.transforms(Image.open(str(self.images[idx])))
-
         images = self.load_middle_nifti_slice(str(self.images[idx]))
-        print("images", images.shape)
-
         texts = self.tokenize([str(self.captions[idx])])[0]
         return images, texts
 
     def load_middle_nifti_slice(self, nifti_path):
-        print("Loading NIfTI")
         nifti_img = nib.load(nifti_path)
         volume = nifti_img.get_fdata()  # Shape: (Height, Width, Depth)
 
         total_slices = volume.shape[2]  # Depth = number of slices
-        print("Total slices", total_slices)
-
         middle_idx = total_slices // 2
         selected_slice = volume[:, :, middle_idx]  # Shape: (H, W)
 
@@ -92,9 +84,7 @@ class CsvDataset(Dataset):
         slice_pil = Image.fromarray(slice_np).resize(
             (224, 224), Image.Resampling.BILINEAR
         )
-        transformed_frame = self.transforms(slice_pil)  # Apply transforms (C, H, W)
-
-        return transformed_frame
+        return self.transforms(slice_pil)  # Apply transforms (C, H, W)
 
 
 class SharedEpoch:
