@@ -384,7 +384,7 @@ This should create a csv dataset that one can use to fine-tune coca with open_cl
 ```bash
 python -m open_clip_train.main \
     --dataset-type "csv" \
-    --train-data "path/to/data/dir/train2014.csv" \
+    --train-data "~/CoCa-cross-attn/CT_RATE_ds/valid_reports.csv" \
     --warmup 1000 \
     --batch-size 128 \
     --lr 1e-5 \
@@ -395,7 +395,10 @@ python -m open_clip_train.main \
     --report-to "wandb" \
     --coca-contrastive-loss-weight 0 \
     --coca-caption-loss-weight 1 \
-    --log-every-n-steps 100
+    --log-every-n-steps 100 \
+    --csv_caption_key "VolumeName" \
+    --csv_caption_key "Impressions_EN" \
+    --csv_separator ","
 ```
 
 This is a general setting, open_clip has very parameters that can be set, `python -m open_clip_train.main --help` should show them. The only relevant change compared to pre-training are the two arguments

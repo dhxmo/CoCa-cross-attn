@@ -40,7 +40,7 @@ except ImportError:
 
 class CsvDataset(Dataset):
     def __init__(
-        self, input_filename, transforms, img_key, caption_key, sep="\t", tokenizer=None
+        self, input_filename, transforms, img_key, caption_key, sep=",", tokenizer=None
     ):
         logging.debug(f"Loading csv data from {input_filename}.")
         df = pd.read_csv(input_filename, sep=sep)
@@ -546,14 +546,11 @@ def get_csv_dataset(args, preprocess_fn, is_train, epoch=0, tokenizer=None):
     input_filename = args.train_data if is_train else args.val_data
     assert input_filename
 
-    csv_img_key = "VolumeName"
-    csv_caption_key = "Impressions_EN"
-
     dataset = CsvDataset(
         input_filename,
         preprocess_fn,
-        img_key=csv_img_key,
-        caption_key=csv_caption_key,
+        img_key=args.csv_img_key,
+        caption_key=args.csv_caption_key,
         sep=args.csv_separator,
         tokenizer=tokenizer,
     )
