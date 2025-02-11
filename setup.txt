@@ -34,7 +34,7 @@ python -m open_clip_train.main \
     --dataset-type "csv" \
     --train-data "/root/CoCa-cross-attn/CT_RATE_ds/valid_reports.csv" \
     --warmup 1000 \
-    --batch-size 16 \
+    --batch-size 8 \
     --lr 1e-5 \
     --wd 0.1 \
     --epochs 10 \

@@ -91,7 +91,7 @@ class CrossFrameAttention(nn.Module):
         super().__init__()
         encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.cls_token = nn.Parameter(torch.empty(1, 1, 1, embed_dim))
+        self.cls_token = nn.Parameter(torch.empty(1, 1, embed_dim))
         nn.init.kaiming_uniform_(self.cls_token)  # Learnable CLS token
 
         self.to_latent = nn.Identity()
@@ -99,10 +99,10 @@ class CrossFrameAttention(nn.Module):
     def forward(self, frame_embeddings):
         """return CLS token as pooled representation nd its latent"""
         print("frame_embeddings", frame_embeddings.shape)
-        batch_size, _, sl, _ = frame_embeddings.shape
-        
+        batch_size, _, _ = frame_embeddings.shape
+
         cls_tokens = self.cls_token.expand(
-            batch_size, -1, sl, -1
+            batch_size, -1, -1
         )  # (batch_size, 1, embed_dim)
         print("cls_tokens", cls_tokens.shape)
 
@@ -112,8 +112,10 @@ class CrossFrameAttention(nn.Module):
         )  # (batch_size, num_frames+1, embed_dim)
         print("input_seq", input_seq.shape)
 
-        output = self.transformer(input_seq)  # (batch_size, num_frames+1, embed_dim)
-        cls_emb = output[:, 0, :]  # Extract CLS token as pooled representation
+        output = self.transformer(
+            input_seq
+        )  # (batch_size, num_frames+1, sl, embed_dim)
+        cls_emb = output[:, 0, :, :]  # Extract CLS token as pooled representation
         print("cls_emb", cls_emb.shape, self.to_latent(cls_emb).shape)
 
         return self.to_latent(cls_emb), cls_emb
@@ -214,6 +216,10 @@ class CoCa(nn.Module):
             dim=1,
         )
         print("frame_embeddings", frame_embeddings.shape)
+        frame_embeddings = frame_embeddings.mean(
+            dim=2
+        )  # (batch_size, num_frames, embed_dim)
+        print("post frame_embeddings", frame_embeddings.shape)
 
         # cross attention between tokens
         temporal_image_latent, temporal_image_emb = self.temporal_attention(
