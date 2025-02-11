@@ -66,7 +66,9 @@ class CsvDataset(Dataset):
     def __getitem__(self, idx):
         # TODO: send video instead of image::
         # images = self.transforms(Image.open(str(self.images[idx])))
-        images = self.load_nifti_as_video(self.images[idx])  # (num_frames, C, H, W)
+
+        images = self.load_nifti_as_video(str(self.images[idx]))
+        print("images", images.shape)
 
         texts = self.tokenize([str(self.captions[idx])])[0]
         return images, texts
@@ -87,10 +89,10 @@ class CsvDataset(Dataset):
 
         # Find middle slice
         middle_idx = total_slices // 2
-        start_idx = max(0, middle_idx - 5)
-        end_idx = min(total_slices, middle_idx + 5)
+        # start_idx = max(0, middle_idx - 5)
+        # end_idx = min(total_slices, middle_idx + 5)
 
-        selected_slices = volume[:, :, start_idx:end_idx]  # Shape: (H, W, num_frames)
+        selected_slices = volume[:, :, middle_idx]  # Shape: (H, W, num_frames)
         selected_slices = selected_slices.transpose(
             2, 0, 1
         )  # Shape: (num_frames, H, W)
@@ -112,7 +114,7 @@ class CsvDataset(Dataset):
             transformed_frames.append(transformed_frame)
 
         # Stack frames into (num_frames, C, H, W)
-        return torch.stack(transformed_frames)
+        return torch.stack(transformed_frames).squeeze(0)
 
 
 class SharedEpoch:

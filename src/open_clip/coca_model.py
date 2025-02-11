@@ -86,50 +86,50 @@ def _token_to_tensor(token_id, device: str = "cpu") -> torch.Tensor:
     return token_id
 
 
-class CrossFrameAttention(nn.Module):
-    def __init__(
-        self, intermediate_encoder_state=255, embed_dim=768, num_heads=8, num_layers=2
-    ):
-        super().__init__()
-        self.intermediate_encoder_state = intermediate_encoder_state
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=intermediate_encoder_state * embed_dim, nhead=num_heads
-        )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.cls_token = nn.Parameter(
-            torch.empty(1, 1, intermediate_encoder_state, embed_dim)
-        )
-        nn.init.kaiming_uniform_(self.cls_token)  # Learnable CLS token
+# class CrossFrameAttention(nn.Module):
+#     def __init__(
+#         self, intermediate_encoder_state=255, embed_dim=768, num_heads=8, num_layers=2
+#     ):
+#         super().__init__()
+#         self.intermediate_encoder_state = intermediate_encoder_state
+#         encoder_layer = nn.TransformerEncoderLayer(
+#             d_model=intermediate_encoder_state * embed_dim, nhead=num_heads
+#         )
+#         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+#         self.cls_token = nn.Parameter(
+#             torch.empty(1, 1, intermediate_encoder_state, embed_dim)
+#         )
+#         nn.init.kaiming_uniform_(self.cls_token)  # Learnable CLS token
 
-        self.to_latent = nn.Identity()
+#         self.to_latent = nn.Identity()
 
-    def forward(self, frame_embeddings):
-        """return CLS token as pooled representation nd its latent"""
-        print("frame_embeddings", frame_embeddings.shape)
-        # (batch_size, num_frames, intermediate_dim, embed_dim)
-        batch_size, num_frames, intermediate, embed = frame_embeddings.shape
+#     def forward(self, frame_embeddings):
+#         """return CLS token as pooled representation nd its latent"""
+#         print("frame_embeddings", frame_embeddings.shape)
+#         # (batch_size, num_frames, intermediate_dim, embed_dim)
+#         batch_size, num_frames, intermediate, embed = frame_embeddings.shape
 
-        cls_tokens = self.cls_token.expand(
-            batch_size, -1, self.intermediate_encoder_state, -1
-        )  # (batch_size, 1, intermediate_encoder_state, embed_dim)
-        print("cls_tokens", cls_tokens.shape)
+#         cls_tokens = self.cls_token.expand(
+#             batch_size, -1, self.intermediate_encoder_state, -1
+#         )  # (batch_size, 1, intermediate_encoder_state, embed_dim)
+#         print("cls_tokens", cls_tokens.shape)
 
-        # Concatenate CLS token and frame embeddings to create input for transformer encoder
-        input_seq = torch.cat(
-            [cls_tokens, frame_embeddings], dim=1
-        )  # (batch_size, num_frames+1, intermediate_encoder_state, embed_dim)
-        print("input_seq", input_seq.shape)
+#         # Concatenate CLS token and frame embeddings to create input for transformer encoder
+#         input_seq = torch.cat(
+#             [cls_tokens, frame_embeddings], dim=1
+#         )  # (batch_size, num_frames+1, intermediate_encoder_state, embed_dim)
+#         print("input_seq", input_seq.shape)
 
-        # (batch_size, num_frames+1, intermediate_encoder_state*embed_dim)
-        input_seq = input_seq.view(batch_size, num_frames + 1, intermediate * embed)
+#         # (batch_size, num_frames+1, intermediate_encoder_state*embed_dim)
+#         input_seq = input_seq.view(batch_size, num_frames + 1, intermediate * embed)
 
-        output = self.transformer(
-            input_seq
-        )  # (batch_size, num_frames+1, intermediate_encoder_state*embed_dim)
-        cls_emb = output[:, 0, :]  # Extract CLS token as pooled representation
-        print("cls_emb", cls_emb.shape, self.to_latent(cls_emb).shape)
+#         output = self.transformer(
+#             input_seq
+#         )  # (batch_size, num_frames+1, intermediate_encoder_state*embed_dim)
+#         cls_emb = output[:, 0, :]  # Extract CLS token as pooled representation
+#         print("cls_emb", cls_emb.shape, self.to_latent(cls_emb).shape)
 
-        return self.to_latent(cls_emb), cls_emb
+#         return self.to_latent(cls_emb), cls_emb
 
 
 class CoCa(nn.Module):
@@ -177,7 +177,7 @@ class CoCa(nn.Module):
             cast_dtype=cast_dtype,
         )
 
-        self.temporal_attention = CrossFrameAttention(embed_dim)
+        # self.temporal_attention = CrossFrameAttention(embed_dim)
 
         self.text_decoder = _build_text_decoder_tower(
             vocab_size,
@@ -263,8 +263,8 @@ class CoCa(nn.Module):
     ):
         if image_latent is None or image_embs is None:
             # --- volume frames. add attention pooling here
-            # image_latent, image_embs = self._encode_image(image)
-            image_latent, image_embs = self._temporal_attention(image)
+            image_latent, image_embs = self._encode_image(image)
+            # image_latent, image_embs = self._temporal_attention(image)
 
         if text is None:
             return {"image_features": image_latent, "image_embs": image_embs}
