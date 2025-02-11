@@ -96,16 +96,14 @@ class FrameAttentionPooling(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
-        self.cls_token = nn.Parameter(torch.empty(1, 1, 1, embed_dim))  # (1, 1, 1, 768)
+        self.cls_token = nn.Parameter(torch.empty(1, 1, embed_dim))  # (1, 1, 768)
         nn.init.kaiming_uniform_(self.cls_token)
 
         self.to_latent = nn.Identity()
 
     def forward(self, frame_embeddings):
         # (batch_size, num_frames, seq_len, embed_dim)
-        batch_size, num_frames, seq_len, embed_dim = (
-            frame_embeddings.shape
-        )  # (16, 30, 255, 768)
+        batch_size, num_frames, seq_len, embed_dim = frame_embeddings.shape
         print(
             "batch_size, num_frames, seq_len, embed_dim",
             batch_size,
@@ -114,8 +112,8 @@ class FrameAttentionPooling(nn.Module):
             embed_dim,
         )
 
-        # Expand cls token: (batch_size, 1, seq_len, embed_dim)
-        cls_tokens = self.cls_token.expand(batch_size, -1, seq_len, -1)
+        # Expand cls token: (batch_size, 1, embed_dim)
+        cls_tokens = self.cls_token.expand(batch_size, -1, -1)
         print("cls_token", cls_tokens.shape)
 
         frame_embeddings = frame_embeddings.view(
